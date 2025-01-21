@@ -27,9 +27,13 @@ type Serializer<T> = (value: T) => void;
  */
 export class PrettyTextWriter extends TextWriter {
   private indentCount: number = 0;
+  private readonly prettify_depth: number;
 
-  constructor(writeable: Writeable, private readonly indentSize: number = 2) {
+  constructor(writeable: Writeable,
+              private readonly indentSize: number = 2,
+              prettify_depth: number = Infinity) {
     super(writeable);
+    this.prettify_depth = prettify_depth;
   }
 
   writeFieldName(fieldName: string): void {
@@ -77,10 +81,13 @@ export class PrettyTextWriter extends TextWriter {
       throw new Error("Expecting a struct value");
     }
 
-    if (!currentContainer.clean) {
-      this.writePrettyNewLine(0);
+    if (this.depth() < this.prettify_depth - 1) {
+      if (!currentContainer.clean) {
+        this.writePrettyNewLine(0);
+      }
+      this.writePrettyIndent(-1);
     }
-    this.writePrettyIndent(-1);
+
     switch (currentContainer.containerType) {
       case IonTypes.LIST:
         this.writeable.writeByte(CharCodes.RIGHT_BRACKET);
@@ -125,7 +132,9 @@ export class PrettyTextWriter extends TextWriter {
     this.writePrettyValue();
     this.writeAnnotations();
     this.writeable.writeByte(openingCharacter);
-    this.writePrettyNewLine(1);
+    if (this.depth() < this.prettify_depth - 1) {
+      this.writePrettyNewLine(1);
+    }
     this._stepIn(type);
   }
 
@@ -143,11 +152,15 @@ export class PrettyTextWriter extends TextWriter {
         switch (this.currentContainer.containerType) {
           case IonTypes.LIST:
             this.writeable.writeByte(CharCodes.COMMA);
-            this.writePrettyNewLine(0);
+            if (this.depth() < this.prettify_depth) {
+              this.writePrettyNewLine(0);
+            }
             break;
           case IonTypes.SEXP:
             this.writeable.writeByte(CharCodes.SPACE);
-            this.writePrettyNewLine(0);
+            if (this.depth() < this.prettify_depth) {
+              this.writePrettyNewLine(0);
+            }
             break;
           default:
           // no op
@@ -168,14 +181,14 @@ export class PrettyTextWriter extends TextWriter {
 
   private writePrettyNewLine(incrementValue: number): void {
     this.indentCount = this.indentCount + incrementValue;
-    if (this.indentSize && this.indentSize > 0) {
+    if (this.indentSize && this.indentSize > 0 && this.depth() < this.prettify_depth) {
       this.writeable.writeByte(CharCodes.LINE_FEED);
     }
   }
 
   private writePrettyIndent(incrementValue: number): void {
     this.indentCount = this.indentCount + incrementValue;
-    if (this.indentSize && this.indentSize > 0) {
+    if (this.indentSize && this.indentSize > 0 && this.depth() < this.prettify_depth) {
       for (let i = 0; i < this.indentCount * this.indentSize; i++) {
         this.writeable.writeByte(CharCodes.SPACE);
       }

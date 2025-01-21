@@ -17,6 +17,7 @@
     "strictNullChecks": true,
     "rootDirs": ["src", "test"],
     "outDir": "dist/commonjs/es6",
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "skipLibCheck": true
   }
 }

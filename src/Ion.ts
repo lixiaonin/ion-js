@@ -78,9 +78,10 @@ export function makeTextWriter(): Writer {
 }
 
 /** Creates a new Ion Text Writer with pretty printing of the text. */
-export function makePrettyWriter(indentSize?: number): Writer {
+export function makePrettyWriter(indentSize?: number,
+                                 prettifyDepth: number = Infinity): Writer {
   // TODO #384 make LST an optional parameter
-  return new PrettyTextWriter(new Writeable(), indentSize);
+  return new PrettyTextWriter(new Writeable(), indentSize, prettifyDepth);
 }
 
 /** Creates a new Ion Binary Writer. */
@@ -119,9 +120,13 @@ export function dumpText(...values: any[]): string {
  * Returns a text Ion representation of the provided values that is generously spaced for
  * easier human readability.
  * @param values Values to encode in Ion.
+ * @param indentSize
+ * @param prettifyDepth
  */
-export function dumpPrettyText(...values: any[]): string {
-  return decodeUtf8(_writeAllTo(makePrettyWriter(), values));
+export function dumpPrettyText(values: any[],
+                               indentSize: number = 4,
+                               prettifyDepth: number = Infinity): string {
+  return decodeUtf8(_writeAllTo(makePrettyWriter(indentSize, prettifyDepth), values));
 }
 
 export { Reader, ReaderScalarValue } from "./IonReader";
